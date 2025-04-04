@@ -1,11 +1,10 @@
 # SilkRift
 
-* SilkRift 是一个专注于 Android 平台底层操作的安全工具集，主要用于合法的安全研究和系统调试。项目使用 Dobby Hook框架，提供了一系列强大的系统级功能。
+*SilkRift 是一个专注于 Android 平台底层操作的安全工具集，主要用于合法的安全研究和系统调试。项目使用 Dobby Hook框架，提供了一系列强大的系统级功能。*
 
 ## 🔍 核心功能
 
 ### 📂 I/O 重定向系统 (IORedirects)
-
 - **功能**：拦截和重定向文件操作相关系统调用
 - **支持函数**：`open`、`openat`、`__openat`等
 - **特点**：
@@ -14,41 +13,42 @@
   - 低性能开销
 
 ### 👻 内存隐藏系统 (MapsGhost)
-
-- **功能**：修改 `/proc/self/maps` 内容
+- **功能**：修改 `/proc/self/maps` 和 `/proc/(pid)/maps` 内容
 - **特点**：
   - 隐藏特定内存区域
   - 支持动态配置
   - 对抗内存扫描
 
 ### 🛡️ 崩溃绕过机制 (StealthCrashBypass)
-
 - **功能**：拦截和处理异常崩溃
 - **应用场景**：
   - 增强应用稳定性
   - 防止安全检测导致的意外退出
 
+### 🔐 签名验证绕过 (SignatureBypass)
+- **功能**：绕过APK签名验证机制
+- **技术实现**：
+  - Hook `PackageManager` 相关方法
+  - 修改签名校验返回值
+  - 支持动态启用/禁用
+- **兼容性**：
+  - 支持标准Java层校验
+
 ## ⚠️ 已知问题：Unity 游戏兼容性
-
 ### 🎮 问题表现
-
 Unity 游戏运行时会出现以下错误：
-
 ```
 Failed to read assets/bin/Data/unity_app_guid
 ```
 
 ### 🔧 可能原因
-
 1. I/O 重定向干扰了 Unity 的资源加载机制
 2. 沃野布及岛
 
 ## ⚠️ 重要声明
-
 **本项目仅供合法的安全研究和技术学习使用！**
 
 严禁用于以下用途：
-
 - 破解正版软件
 - 窃取用户数据
 - 制作恶意软件
@@ -57,14 +57,12 @@ Failed to read assets/bin/Data/unity_app_guid
 使用者需自行承担因滥用带来的法律后果。
 
 ## 📚 使用建议
-
 1. **测试环境**：建议在测试设备或模拟器中使用
 2. **权限控制**：仅授予必要权限
 3. **兼容性测试**：在不同 Android 版本上充分测试
 4. **错误处理**：实现完善的错误回调机制
 
 ## 🔗 相关资源
-
 - [Dobby 框架文档](https://github.com/jmpews/Dobby)
 - Android NDK 官方文档
 - Linux 系统调用手册
@@ -72,4 +70,3 @@ Failed to read assets/bin/Data/unity_app_guid
 ---
 
 **请务必遵守法律法规，仅将本项目用于合法的技术研究和学习目的！**
-
