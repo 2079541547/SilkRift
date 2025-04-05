@@ -11,10 +11,9 @@ public class ApplicationStub extends Application {
         }
         Core.StealthCrashBypass_Install();
         MapsGhost.init();
-        MapsGhost.add_entry(IORedirects.repPath);
-        MapsGhost.add_entry("libsilkrift.so");
-        MapsGhost.add_entry("original.apk");
         IORedirects.RedirectAPK();
-        SignatureFaker.init(Core.createAppContext(), SignatureFaker.getApkSignatureBytes(Core.createAppContext(), IORedirects.repPath));
+        MapsGhost.add_entry("original.apk");
+        MapsGhost.add_entry("libsilkrift.so");
+        APKKiller.init(Core.createAppContext(), IORedirects.repPath);
     }
 }

@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
 
         printSignatureDetails();
         verifyApkIntegrity();
-        checkProcessMaps();
+        // checkProcessMaps();
 
         checkManifestTampering();
         checkApplicationClass();

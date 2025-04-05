@@ -23,7 +23,6 @@
 #include <IORedirects.hpp>
 #include <MapsGhost.hpp>
 #include <StealthCrashBypass.hpp>
-#include <LinkerBypass.hpp>
 #include "Log.hpp"
 
 extern "C"
@@ -34,6 +33,12 @@ Java_eternal_future_silkrift_IORedirects_add_1entry(JNIEnv *env, jclass clazz, j
 }
 
 
+extern "C"
+JNIEXPORT void JNICALL
+Java_eternal_future_silkrift_IORedirects_add_1directory(JNIEnv *env, jclass clazz, jstring from,
+                                                        jstring to) {
+    SilkRift::IORedirects::add_directory_redirects(env->GetStringUTFChars(from, nullptr), env->GetStringUTFChars(to, nullptr));
+}
 
 extern "C"
 JNIEXPORT jobject JNICALL
@@ -71,21 +76,4 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_eternal_future_silkrift_Core_StealthCrashBypass_1Install(JNIEnv *env, jclass clazz) {
     StealthCrashBypass::Install();
-}
-extern "C"
-JNIEXPORT void JNICALL
-Java_eternal_future_silkrift_Core_LinkerBypass(JNIEnv *env, jclass clazz) {
-    SilkRift::Linker::Config config;
-    config.bypass_types = {
-            SilkRift::Linker::BypassType::NAMESPACE,
-            SilkRift::Linker::BypassType::PATH,
-            SilkRift::Linker::BypassType::RELATIVE
-    };
-    config.safe_mode = true;
-    config.max_retry_count = 5;
-
-    SilkRift::LinkerBypass bypass(config);
-    if (bypass.install()) {
-        LOGD("Linker bypass installed successfully");
-    }
 }

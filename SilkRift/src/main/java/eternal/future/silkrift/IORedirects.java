@@ -23,5 +23,6 @@ public class IORedirects {
         add_entry(Objects.requireNonNull(Core.createAppContext()).getPackageCodePath(), repPath);
     }
     public static native void add_entry(String from, String to);
+    public static native void add_directory(String from, String to);
     public static native void init(boolean open, boolean openat, boolean __openat);
 }

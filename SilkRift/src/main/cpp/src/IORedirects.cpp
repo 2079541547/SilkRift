@@ -102,6 +102,24 @@ void SilkRift::IORedirects::add_content_processor(const std::string &path,
     LOGI("Added content processor for %s", path.c_str());
 }
 
+void SilkRift::IORedirects::add_directory_redirects(const std::string &from, const std::string &to) {
+    if (from.empty() || to.empty()) {
+        LOGE("Empty path | %s → %s", from.c_str(), to.c_str());
+        return;
+    }
+    if (from == to) {
+        LOGW("Self-redirect | %s", from.c_str());
+        return;
+    }
+
+    auto [it, inserted] = redirectsDirectoryMap.insert_or_assign(from, to);
+    LOGI("%s redirect | %s → %s", inserted ? "Added" : "Updated", from.c_str(), to.c_str());
+
+    if (!initialize && init()) {
+        LOGI("Initialized I/O subsystem");
+    }
+}
+
 void SilkRift::IORedirects::process_file_content(const std::string &path,
                                                  open_type open_orig,
                                                  openat_type openat_orig, __openat_type __openat_orig) {
@@ -126,6 +144,16 @@ int SilkRift::IORedirects::open_hook(const char *path, int flags, mode_t mode) {
         LOGD("(open) path redirect: %s -> %s (flags: 0x%x)", path, target, flags);
 
         return open_org(target, flags, mode);
+    }
+
+    for (const auto& [srcDir, targetDir] : redirectsDirectoryMap) {
+        if (pathStr.rfind(srcDir, 0) == 0) {
+            std::string remainingPath = pathStr.substr(srcDir.size());
+            std::string newPath = targetDir + remainingPath;
+            process_file_content(pathStr, nullptr, nullptr, __openat_org);
+            LOGD("(open) directory redirect: %s -> %s (flags: 0x%x)", path, newPath.c_str(), flags);
+            return open_org(newPath.c_str(), flags, mode);
+        }
     }
 
     auto fdIt = redirectsMap_fd.find(pathStr);
@@ -157,6 +185,16 @@ int SilkRift::IORedirects::openat_hook(int dirfd, const char *path, int flags, m
         return openat_org(dirfd, target, flags, mode);
     }
 
+    for (const auto& [srcDir, targetDir] : redirectsDirectoryMap) {
+        if (pathStr.rfind(srcDir, 0) == 0) {
+            std::string remainingPath = pathStr.substr(srcDir.size());
+            std::string newPath = targetDir + remainingPath;
+            process_file_content(pathStr, nullptr, nullptr, __openat_org);
+            LOGD("(openat) directory redirect: %s -> %s (flags: 0x%x)", path, newPath.c_str(), flags);
+            return openat_org(dirfd, newPath.c_str(), flags, mode);
+        }
+    }
+
     auto fdIt = redirectsMap_fd.find(pathStr);
     if (fdIt != redirectsMap_fd.end()) {
         int targetFd = fdIt->second;
@@ -184,6 +222,16 @@ int SilkRift::IORedirects::__openat_hook(int dirfd, const char* path, int flags,
         LOGD("(__openat) path redirect: %s -> %s (flags: 0x%x)", path, target, flags);
 
         return __openat_org(dirfd, target, flags, mode);
+    }
+
+    for (const auto& [srcDir, targetDir] : redirectsDirectoryMap) {
+        if (pathStr.rfind(srcDir, 0) == 0) {
+            std::string remainingPath = pathStr.substr(srcDir.size());
+            std::string newPath = targetDir + remainingPath;
+            process_file_content(pathStr, nullptr, nullptr, __openat_org);
+            LOGD("(__openat) directory redirect: %s -> %s (flags: 0x%x)", path, newPath.c_str(), flags);
+            return __openat_org(dirfd, newPath.c_str(), flags, mode);
+        }
     }
 
     auto fdIt = redirectsMap_fd.find(pathStr);
@@ -216,7 +264,6 @@ long SilkRift::IORedirects::sys_open(long mun, va_list args) {
     const char* path = va_arg(args, const char*);
     int flags = va_arg(args, int);
     mode_t mode = va_arg(args, mode_t);
-    return (long)open_hook(path, flags, mode);
 #endif
 
 
@@ -230,8 +277,22 @@ long SilkRift::IORedirects::sys_open(long mun, va_list args) {
 #if defined(__LP64__)
         return SyscallHook::syscall_org(mun, dirfd, target, flags, mode);
 #else
-        return SyscallHook::syscall_org(mun, flags, mode);
+        return SyscallHook::syscall_org(mun, target, flags, mode);
 #endif
+    }
+
+    for (const auto& [srcDir, targetDir] : redirectsDirectoryMap) {
+        if (pathStr.rfind(srcDir, 0) == 0) {
+            std::string remainingPath = pathStr.substr(srcDir.size());
+            std::string newPath = targetDir + remainingPath;
+            process_file_content(pathStr, nullptr, nullptr, __openat_org);
+            LOGD("(syscall) directory redirect: %s -> %s (flags: 0x%x)", path, newPath.c_str(), flags);
+#if defined(__LP64__)
+            return SyscallHook::syscall_org(mun, dirfd, newPath.c_str(), flags, mode);
+#else
+            return SyscallHook::syscall_org(mun, newPath.c_str(), flags, mode);
+#endif
+        }
     }
 
     auto fdIt = redirectsMap_fd.find(pathStr);
@@ -247,4 +308,10 @@ long SilkRift::IORedirects::sys_open(long mun, va_list args) {
         LOGD("(syscall) fd redirect - direct: %s -> fd:%d (flags: 0x%x)", path, targetFd, flags);
         return targetFd;
     }
+
+#if defined(__LP64__)
+    return SyscallHook::syscall_org(mun, dirfd, path, flags, mode);
+#else
+    return SyscallHook::syscall_org(mun, path, flags, mode);
+#endif
 }

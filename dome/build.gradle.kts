@@ -25,6 +25,18 @@ android {
             )
         }
     }
+
+    signingConfigs {
+
+        getByName("debug") {
+            storeFile = file("test.jks")
+            keyAlias = "test"
+            storePassword = "123456"
+            keyPassword = "123456"
+        }
+
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

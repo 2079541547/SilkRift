@@ -43,6 +43,8 @@ namespace SilkRift {
         inline static std::unordered_map<std::string, std::function<void(const std::string&,
                 open_type, openat_type, __openat_type)>> contentProcessors;
 
+        inline static std::unordered_map<std::string, std::string> redirectsDirectoryMap;
+
         static int open_hook(const char* path, int flags, mode_t mode);
         static int openat_hook(int dirfd, const char* path, int flags, mode_t mode);
         static int __openat_hook(int dirfd, const char* path, int flags, int mode);
@@ -64,6 +66,8 @@ namespace SilkRift {
         static void add_open_redirects(const std::string &from, const std::string &to);
         static void add_open_redirects(const std::string &from, int to);
         static void add_content_processor(const std::string& path, const std::function<void(const std::string&, open_type, openat_type, __openat_type)>& processor);
+        
+        static void add_directory_redirects(const std::string &from, const std::string &to);
     };
 
 }

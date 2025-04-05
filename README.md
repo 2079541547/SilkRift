@@ -1,68 +1,139 @@
-# SilkRift
+# 🌀 SilkRift
 
-*SilkRift 是一个专注于 Android 平台底层操作的安全工具集，主要用于合法的安全研究和系统调试。项目使用 Dobby Hook框架，提供了一系列强大的系统级功能。*
+*SilkRift 是一个专用于安卓程序的安全测试框架*
 
 ## 🔍 核心功能
 
 ### 📂 I/O 重定向系统 (IORedirects)
-- **功能**：拦截和重定向文件操作相关系统调用
-- **支持函数**：`open`、`openat`、`__openat`等
-- **特点**：
-  - 动态添加重定向规则
-  - 细粒度的路径控制
-  - 低性能开销
+
+**实现原理：**
+
+```cpp
+// 三级拦截体系
+DobbyHook(open_addr, open_hook, ...);    // libc
+DobbyHook(openat_addr, openat_hook, ...); // libc
+DobbyHook(__openat_addr, __openat_hook, ...); // libc
+SyscallHook(SYS_openat, sys_open);  // syscall
+```
+
+**特色功能：**
+
+- 动态路径替换 `/data/app/xxx → /data/data/xxx/modified.apk`
+- 文件描述符重定向
+- 智能冲突检测机制
 
 ### 👻 内存隐藏系统 (MapsGhost)
-- **功能**：修改 `/proc/self/maps` 和 `/proc/(pid)/maps` 内容
-- **特点**：
-  - 隐藏特定内存区域
-  - 支持动态配置
-  - 对抗内存扫描
 
-### 🛡️ 崩溃绕过机制 (StealthCrashBypass)
-- **功能**：拦截和处理异常崩溃
-- **应用场景**：
-  - 增强应用稳定性
-  - 防止安全检测导致的意外退出
+**实现原理：**
 
-### 🔐 签名验证绕过 (SignatureBypass)
-- **功能**：绕过APK签名验证机制
-- **技术实现**：
-  - Hook `PackageManager` 相关方法
-  - 修改签名校验返回值
-  - 支持动态启用/禁用
-- **兼容性**：
-  - 支持标准Java层校验
+```cpp
+// 创建虚拟/proc文件
+maps_fd = syscall(SYS_memfd_create, "maps_ghost", MFD_CLOEXEC);
 
-## ⚠️ 已知问题：Unity 游戏兼容性
-### 🎮 问题表现
-Unity 游戏运行时会出现以下错误：
-```
-Failed to read assets/bin/Data/unity_app_guid
+// 依赖文件重定向：
+IORedirects::add_open_redirects("/proc/self/maps", maps_fd);
+IORedirects::add_open_redirects(pm, maps_pid_fd);
+IORedirects::add_content_processor("/proc/self/maps", ContentProcessing);
+IORedirects::add_content_processor(pm, ContentProcessing);
+...
+
+// 动态注册需要过滤的敏感内容
+SilkRift::MapsGhost::add_ghost_entry("entry1"); 
+...
+
 ```
 
-### 🔧 可能原因
-1. I/O 重定向干扰了 Unity 的资源加载机制
-2. 沃野布及岛
+**优势：**
 
-## ⚠️ 重要声明
+- 不依赖/proc直接修改
+- 低内存占用设计
+
+### 🛡️ 崩溃防护系统
+
+**原理：**
+
+```cpp
+void SignalHandler(int sig, siginfo_t* info, void* ucontext) {
+    // 智能跳转修复
+    modify_ucontext(ucontext); 
+    // 频率限制
+    if (++crashRecords[faultAddr] > 5) {
+        force_skip_instruction(); //跳过错误指令
+    }
+}
+```
+
+**支持信号类型：**
+
+
+| 信号    | 处理方案   |
+| ------- | ---------- |
+| SIGSEGV | 堆栈修复   |
+| SIGILL  | 指令集重置 |
+| SIGTRAP | 线程恢复   |
+
+## 🎭 APK全息伪装技术
+
+### 🔄 工作流程
+
+```java
+1. 劫持PackageManager → 
+2. 动态修改关键字段：
+   - ApplicationInfo.sourceDir
+   - PackageInfo.signatures
+   - LoadedApk.mAppDir
+...
+```
+
+### 📦 签名伪装方案
+
+**多版本兼容实现：**
+
+```java
+// Android 9+使用SigningInfo
+if (Build.VERSION.SDK_INT >= P) {
+    patchSigningInfo(pkgInfo);
+} 
+// 传统签名方案
+else {
+    patchSignatures(pkgInfo);  
+}
+```
+
+### 🔑 关键技术点
+
+```cpp
+// 动态修改内存中的路径信息
+void safeSetApplicationInfoPaths(ApplicationInfo appInfo, String newPath) {
+    setField(appInfo, "sourceDir", newPath);
+    setField(appInfo, "publicSourceDir", newPath);
+    // 处理Split APK
+    if (Build.VERSION.SDK_INT >= P) {
+        setField(appInfo, "mSplitSourceDirs", new String[]{newPath});
+    }
+}
+```
+
+## 📜 法律声明
+
 **本项目仅供合法的安全研究和技术学习使用！**
 
-严禁用于以下用途：
+⚠️ **本框架仅限用于：**
+
+- 授权安全测试
+- 应用兼容性调试
+- 隐私保护研究
+
+🚫 **严禁用于：**
+
 - 破解正版软件
+- 绕过支付系统
 - 窃取用户数据
-- 制作恶意软件
-- 侵犯他人隐私
 
 使用者需自行承担因滥用带来的法律后果。
 
-## 📚 使用建议
-1. **测试环境**：建议在测试设备或模拟器中使用
-2. **权限控制**：仅授予必要权限
-3. **兼容性测试**：在不同 Android 版本上充分测试
-4. **错误处理**：实现完善的错误回调机制
-
 ## 🔗 相关资源
+
 - [Dobby 框架文档](https://github.com/jmpews/Dobby)
 - Android NDK 官方文档
 - Linux 系统调用手册

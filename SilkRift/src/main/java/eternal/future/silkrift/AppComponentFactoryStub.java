@@ -11,10 +11,11 @@ public class AppComponentFactoryStub extends AppComponentFactory {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        IORedirects.RedirectAPK();
+        Core.StealthCrashBypass_Install();
         MapsGhost.init();
-        MapsGhost.add_entry(IORedirects.repPath);
+        IORedirects.RedirectAPK();
+        MapsGhost.add_entry("original.apk");
         MapsGhost.add_entry("libsilkrift.so");
-        SignatureFaker.init(Core.createAppContext(), SignatureFaker.getApkSignatureBytes(Core.createAppContext(), IORedirects.repPath));
+        APKKiller.init(Core.createAppContext(), IORedirects.repPath);
     }
 }

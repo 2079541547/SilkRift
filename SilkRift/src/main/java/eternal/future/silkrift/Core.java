@@ -44,8 +44,8 @@ public class Core {
         String soAssetPath = "assets/silkrift/so/" + libDir + "/libsilkrift.so";
         File soFile = extractAssetToTemp(soAssetPath, "libsilkrift", ".so");
 
-        System.loadLibrary("silkrift");
-        // System.load(soFile.getAbsolutePath());
+        // System.loadLibrary("silkrift");
+        System.load(soFile.getAbsolutePath());
 
         initialize = true;
     }

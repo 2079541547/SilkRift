@@ -10,8 +10,8 @@ add_library(silkrift SHARED
         src/SysCallHook.cpp
         src/MapsGhost.cpp
         src/StealthCrashBypass.cpp
-        src/LinkerBypass.cpp
 )
+
 
 target_include_directories(silkrift
         PUBLIC
