@@ -18,6 +18,10 @@ android {
         }
     }
 
+    packagingOptions {
+        exclude("**/**/libdobby.so")
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

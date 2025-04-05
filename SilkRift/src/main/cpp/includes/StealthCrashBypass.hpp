@@ -21,27 +21,46 @@
 
 #pragma once
 
-#include <csignal>
-#include <unordered_map>
-#include <mutex>
+
+
+
+#include <array>
 #include <atomic>
 
 class StealthCrashBypass {
 public:
+    static constexpr size_t MAX_CRASH_RECORDS = 32;
+    static constexpr int INITIAL_SKIP_DISTANCE = 4;  // 初始跳过4字节
+    static constexpr int MIN_JUMP_OUT_DISTANCE = INT32_MAX;
+    static constexpr int MAX_SKIP_DISTANCE = INT32_MAX;     // 最大跳过 2^32 字节
+    static constexpr int MAX_SKIP_ATTEMPTS_LOG2 = 32; // 最多尝试次数(2^32)
+
+    struct CrashRecord {
+        std::atomic<int> attemptCount{0};
+        std::atomic<int> lastSignal{0};
+        std::atomic<time_t> lastTimestamp{0};
+    };
+
     static void Install();
     static void Uninstall();
+    static void PrintCrashStats();
 
 private:
-    inline static void SignalHandler(int sig, siginfo_t* info, void* ucontext);
+    static void SignalHandler(int sig, siginfo_t* info, void* ucontext);
+    static const char* GetSignalName(int sig);
+    static const char* GetSignalDescription(int sig);
+    static void LogCrashDetails(int sig, siginfo_t* info, void* ucontext);
+    static void LogRegisterState(ucontext_t* uc);
+    static void LogMemoryAround(void* addr);
 
-    inline static std::unordered_map<void*, std::atomic<int>> crashRecords;
-    inline static std::mutex crashMutex;
+    static std::array<CrashRecord, MAX_CRASH_RECORDS> crashRecords;
+    static std::array<void*, MAX_CRASH_RECORDS> crashAddresses;
+    static std::atomic<size_t> recordCount;
 
-    static constexpr int INITIAL_SKIP_DISTANCE = 2;
-    static constexpr int MAX_SKIP_ATTEMPTS = 10;
-    static constexpr int MAX_LOG_LENGTH = 256;
-
-    inline static struct sigaction originalSigSegv;
-    inline static struct sigaction originalSigIll;
-    inline static struct sigaction originalSigTrap;
+    static struct sigaction originalSigSegv;
+    static struct sigaction originalSigIll;
+    static struct sigaction originalSigTrap;
+    static struct sigaction originalSigAbrt;
+    static struct sigaction originalSigBus;
+    static struct sigaction originalSigFpe;
 };

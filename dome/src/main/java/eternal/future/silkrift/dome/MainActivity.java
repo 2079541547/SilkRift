@@ -100,11 +100,34 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkApplicationClass() {
         try {
-            appendLog("\n[2] 验证Application类...");
+            appendLog("\n[2] 验证Application类及应用信息...");
 
-            ApplicationInfo appInfo = getPackageManager().getApplicationInfo(getPackageName(), 0);
+            // 获取包信息
+            String packageName = getPackageName();
+            PackageInfo pkgInfo = getPackageManager().getPackageInfo(packageName, 0);
+            ApplicationInfo appInfo = getPackageManager().getApplicationInfo(packageName, 0);
+
+            // 打印基础信息
+            appendLog("应用包名: " + packageName);
+            appendLog("版本名称: " + pkgInfo.versionName);
+            appendLog("版本号: " + pkgInfo.versionCode);
+
+            // 检测共享UID（如果存在）
+            if (appInfo.uid != Process.myUid()) {
+                appendLog("警告：检测到共享UID (sharedUserId)，可能与其他应用共享数据");
+            } else {
+                appendLog("UID检测：正常（无共享UID）");
+            }
+
+            // 检测是否被调试
+            if ((appInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+                appendLog("警告：应用处于可调试模式 (android:debuggable=true)");
+            } else {
+                appendLog("调试状态：正常（未开启调试模式）");
+            }
+
+            // 检查Application类
             String appClass = appInfo.className != null ? appInfo.className : EXPECTED_APPLICATION_CLASS;
-
             appendLog("当前Application类: " + appClass);
 
             if (!EXPECTED_APPLICATION_CLASS.equals(appClass)) {
@@ -121,8 +144,9 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 appendLog("Application类验证通过");
             }
+
         } catch (Exception e) {
-            appendLog("Application类检查异常: " + e);
+            appendLog("应用信息检查异常: " + e);
         }
     }
 

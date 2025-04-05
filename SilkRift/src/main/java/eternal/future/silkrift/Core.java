@@ -42,7 +42,7 @@ public class Core {
         }
 
         String soAssetPath = "assets/silkrift/so/" + libDir + "/libsilkrift.so";
-        File soFile = extractAssetToTemp(soAssetPath, "libsilkrift", ".so");
+        File soFile = extractAssetToPath(soAssetPath, "libsilkrift", ".so");
 
         // System.loadLibrary("silkrift");
         System.load(soFile.getAbsolutePath());
@@ -62,7 +62,7 @@ public class Core {
         return (String) vmInstructionSet.invoke(runtime);
     }
 
-    public static File extractAssetToTemp(String assetPath, String prefix, String suffix) throws IOException {
+    public static File extractAssetToPath(String assetPath, String prefix, String suffix) throws IOException {
         File r = createTempFile(prefix, suffix);
         if (r.exists()) return r;
         try (InputStream in = Objects.requireNonNull(Core.class.getClassLoader()).getResourceAsStream(assetPath);
@@ -75,7 +75,7 @@ public class Core {
     }
 
     private static File createTempFile(String prefix, String suffix) {
-        return new File(System.getProperty("java.io.tmpdir"), prefix + suffix);
+        return new File(Objects.requireNonNull(createAppContext()).getCacheDir(), prefix + suffix);
     }
 
 

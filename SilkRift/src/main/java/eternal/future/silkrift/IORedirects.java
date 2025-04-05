@@ -12,7 +12,7 @@ public class IORedirects {
         try {
             if (!Core.initialize) Core.init();
             apkPath = Objects.requireNonNull(Core.createAppContext()).getPackageCodePath();
-            repPath = String.valueOf(Core.extractAssetToTemp("assets/silkrift/original.apk", "original", ".apk"));
+            repPath = String.valueOf(Core.extractAssetToPath("assets/silkrift/original.apk", "original", ".apk"));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

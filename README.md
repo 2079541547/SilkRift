@@ -82,10 +82,15 @@ void SignalHandler(int sig, siginfo_t* info, void* ucontext) {
    - ApplicationInfo.sourceDir
    - PackageInfo.signatures
    - LoadedApk.mAppDir
+3. 伪装字段:
+   - name
+   - className
+   - uid 
+   ...
 ...
 ```
 
-### 📦 签名伪装方案
+### 📦 签名伪装
 
 **多版本兼容实现：**
 
@@ -113,6 +118,56 @@ void safeSetApplicationInfoPaths(ApplicationInfo appInfo, String newPath) {
     }
 }
 ```
+
+## 🍔食用说明
+
+### 📦 文件准备
+将发布的ZIP包解压后得到以下结构：
+```
+📁 silkrift_pkg/
+├── 📄 classes.dex                 # 核心功能实现
+└── 📁 assets/
+    └── 📁 silkrift/
+        ├── 📁 so/                 # 原生库
+        │   ├── 📄 arm64-v8a/libsilkrift.so
+        │   ├── 📄 armeabi-v7a/libsilkrift.so
+        │   ├── 📄 x86/libsilkrift.so
+        │   └── 📄 x86_64/libsilkrift.so
+        └── 📄 original.apk        # 原始APK副本
+```
+
+### 1️⃣ 文件替换
+```bash
+# 替换原始APK（必须！）
+cp /path/to/your.apk assets/silkrift/original.apk
+```
+
+### 2️⃣ 声明注入
+在`AndroidManifest.xml`中添加：
+```xml
+<!-- 
+android:name和android:appComponentFactory任意一个，两个一起可能报错，推荐android:name，如果已经存在就使用android:appComponentFactory
+ -->
+<application
+    android:name="eternal.future.silkrift.ApplicationStub" 
+    android:appComponentFactory="eternal.future.silkrift.AppComponentFactoryStub"/> 
+```
+
+### 3️⃣ 集成方式选择
+
+#### 方案A：合并DEX（推荐✅）
+```bash
+# 使用d8工具合并dex，如：
+d8 target.dex silkrift/classes.dex --output ./merged/
+mv merged/classes.dex target/classes2.dex
+```
+
+#### 方案B：独立加载（免合并🚀）
+```bash
+# 直接放入APK
+cp silkrift/classes.dex target/classes2.dex #看情况修改名称
+```
+
 
 ## 📜 法律声明
 
