@@ -24,7 +24,7 @@ public class Core {
 
     static {
         ARCH_TO_LIB.put("arm", "armeabi-v7a");
-        ARCH_TO_LIB.put("arm64", "arm64-v8a");
+        ARCH_TO_LIB.put("arm64", "arm64-v8a");c
         ARCH_TO_LIB.put("x86", "x86");
         ARCH_TO_LIB.put("x86_64", "x86_64");
     }
